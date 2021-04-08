@@ -1,0 +1,20 @@
+all:
+  vars:
+    ansible_port: 22
+    ansible_user: pi
+    ansible_python_interpreter: /usr/bin/python3
+    ansible_ssh_private_key_file: ~/.ssh/id_rsa
+  hosts:
+    raspi-hostname01:
+      ansible_host: 192.168.100.101
+      chrome_url: "https://www.divera247.de/monitor/1.html?autologin=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+      traefik_hostname: traefik.lz01.meine-feuerwehr.tld
+      admin_hostname: admin.lz01.meine-feuerwehr.tld
+      cups_hostname: cups.lz01.meine-feuerwehr.tld
+    raspi-hostname02:
+      ansible_host: 192.168.100.102
+      chrome_url: "https://www.divera247.de/monitor/2.html?autologin=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+      traefik_hostname: traefik.lz02.meine-feuerwehr.tld
+      admin_hostname: admin.lz02.meine-feuerwehr.tld
+      cups_hostname: cups.lz02.meine-feuerwehr.tld
+        

@@ -1,0 +1,156 @@
+- name: apt update
+  become: true
+  apt: 
+    update_cache: yes
+    upgrade: safe
+  notify: Reboot system
+  tags:
+  - init
+  - system_init
+
+- name: Set new hostname
+  become: true
+  hostname:
+    name: "{{ inventory_hostname }}"
+  notify: Reboot system
+  tags:
+  - init
+  - system_init
+
+- name: Set new hostname in /etc/hosts
+  become: true
+  lineinfile:
+    state: present
+    dest: /etc/hosts
+    line: "127.0.1.1\t{{ inventory_hostname }}"
+    regexp: "^127.0.1.1"
+  notify: Reboot system
+  tags:
+  - init
+  - system_init
+
+- name: Set Timezone
+  become: true
+  timezone: 
+    name: "{{ timezone }}"
+  notify: Reboot system
+  tags:
+  - init
+  - system_init
+
+- name: Disable SWAP command (1/2)
+  become: true
+  shell: swapoff -a
+  notify: Reboot system
+  tags:
+  - init
+  - system_init
+
+- name: Disable SWAP fstab (2/2)
+  become: true
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+  notify: Reboot system
+  tags:
+  - init
+  - system_init
+
+- name: Enable tmpfs for /var/tmp
+  become: true
+  mount: 
+    src: tmpfs
+    path: /var/tmp
+    fstype: tmpfs
+    opts: nodev,nosuid,size=200M
+    state: mounted
+  notify: Reboot system
+  tags:
+  - init
+  - system_init
+
+- name: Enable tmpfs for /var/log
+  become: true
+  mount: 
+    src: tmpfs
+    path: /var/log
+    fstype: tmpfs 
+    opts: nodev,nosuid,size=100M
+    state: mounted
+  notify: Reboot system
+  tags:
+  - init
+  - system_init
+
+- name: change spash screen
+  become: true
+  copy:
+    src: ../files/splash.png
+    dest: /usr/share/plymouth/themes/pix/splash.png
+  tags:
+  - init
+  - system_init
+
+- name: Disable empty password login
+  become: true
+  lineinfile: 
+    dest: "/etc/ssh/sshd_config"
+    regexp: '^#?PermitEmptyPasswords' 
+    line: 'PermitEmptyPasswords no'
+  notify: Restart ssh
+  tags:
+  - init
+  - system_init
+
+- name: Disable remote root login
+  become: true
+  lineinfile: 
+    dest: "/etc/ssh/sshd_config"
+    regexp: '^#?PermitRootLogin'
+    line: 'PermitRootLogin no'
+  notify: Restart ssh
+  tags:
+  - init
+  - system_init
+
+- name: Disable password login
+  become: true
+  lineinfile: 
+    dest: "/etc/ssh/sshd_config" 
+    regexp: '^(#\s*)?PasswordAuthentication '
+    line: 'PasswordAuthentication no'
+  notify: Restart ssh
+  tags:
+  - init
+  - system_init
+
+- name: Install packages
+  become: true
+  apt:
+    name:
+    - ufw
+    state: present
+  notify: Reboot system
+  tags:
+  - init
+  - system_init
+
+- name: Allow ssh and http(s) connections
+  become: true
+  ufw: 
+    rule: allow 
+    port: "{{ item }}"
+  with_items:
+  - "{{ allowed_ports }}"
+  tags:
+  - init
+
+- name: Enable ufw/firewall
+  become: true
+  ufw: 
+    state: enabled 
+    policy: deny
+  tags:
+  - init
+  - system_init

@@ -1,0 +1,139 @@
+- name: Add the user '{{ viewer_user }}'
+  become: true
+  user:
+    name: "{{ viewer_user }}"
+    comment: Alarmdisplay Viewer
+  notify: Reboot system
+  tags:
+  - init
+  - display_init
+
+- name: Change auto-login user to '{{ viewer_user }}'
+  become: true
+  replace:
+    path: /etc/lightdm/lightdm.conf
+    regexp: 'autologin-user\=(.*)$'
+    replace: 'autologin-user={{ viewer_user }}'
+  notify: Reboot system
+  tags:
+  - init
+  - display_init
+
+- name: HDMI force hotplug
+  become: true
+  lineinfile:
+    dest: /boot/config.txt 
+    regexp: "hdmi_force_hotplug" 
+    line: "hdmi_force_hotplug=1" 
+    state: present
+  notify: Reboot system
+  tags:
+  - init
+  - display_init
+
+- name: HDMI normal mode
+  become: true
+  lineinfile:
+    dest: /boot/config.txt 
+    regexp: "hdmi_drive" 
+    line: "#hdmi_drive=2"
+    state: present
+  notify: Reboot system
+  tags:
+  - init
+  - display_init
+
+- name: HDMI group
+  become: true
+  lineinfile:
+    dest: /boot/config.txt 
+    regexp: "hdmi_group" 
+    line: "hdmi_group=2" 
+    state: present
+  notify: Reboot system
+  tags:
+  - init
+  - display_init
+
+- name: HDMI mode FullHD
+  become: true
+  lineinfile: 
+    dest: /boot/config.txt 
+    regexp: "hdmi_mode" 
+    line: "hdmi_mode=82" 
+    state: present
+  notify: Reboot system
+  tags:
+  - init
+  - display_init
+
+- name: Install required packages
+  become: true
+  apt: 
+    name: 
+    - unclutter
+    - ttf-mscorefonts-installer
+    state: present
+  notify: Restart lightdm
+  tags:
+  - init
+  - display_init
+
+- name: Disable lightdm screensaver
+  become: true
+  lineinfile:
+    dest: /etc/lightdm/lightdm.conf 
+    regexp: "xserver-command=" 
+    line: "xserver-command=X -s 0 -dpms" 
+    state: present
+  notify: Restart lightdm
+  tags:
+  - init
+  - display_init
+
+- name: Create chromium script
+  become: true
+  template:
+    src: "../templates/chromium.sh.j2"
+    dest: "/usr/local/bin/chromium-starter.sh"
+    owner: "{{ viewer_user }}"
+    group: "{{ viewer_user }}"
+    mode: 0744
+  tags:
+  - init
+  - update
+  - display_init
+  - display_update
+
+- name: Create chromium service
+  become: true
+  template:
+    src: "../templates/chromium.service.j2"
+    dest: "/etc/systemd/system/chromium.service"
+    mode: 0644
+    owner: root
+    group: root
+  tags:
+  - init
+  - display_init
+
+- name: Reload systemd daemon
+  become: true
+  systemd:
+    daemon_reload: yes
+  tags:
+  - init
+  - display_init
+
+- name: Enable systemd chromium service
+  become: true
+  systemd:
+    name: chromium
+    enabled: yes
+    masked: no
+    state: restarted
+  tags:
+  - init
+  - update
+  - display_init
+  - display_update

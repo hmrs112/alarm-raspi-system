@@ -1,0 +1,42 @@
+# Provisionning Alarm-RasPI-System (ARS)
+- name: alarmraspisystem
+  hosts: all
+  vars:
+    timezone: Europe/Berlin
+    admin_username: superadmin
+    admin_password: supersicherespasswort
+    allowed_ports:
+    - 80
+    - 443
+    - 22
+  tags: 
+  - system
+  roles:
+  - role: system
+  - role: docker
+  - role: admin
+
+# Provisionning Alarm-RasPI-System (ARS) - Display
+- name: alarmraspisystem-display
+  hosts: all
+  vars:
+    timezone: Europe/Berlin
+    display_output: HDMI-1 # HDMI-1, HDMI-2
+    display_rotate: normal # normal, right, left, inverted
+    viewer_user: display-viewer
+  tags: 
+  - display
+  roles:
+  - role: display
+
+# Provisionning Alarm-RasPI-System (ARS) - Print
+- name: alarmraspisystem-print
+  hosts: all
+  vars:
+    timezone: Europe/Berlin
+    cups_admin_password: supersicherespasswort
+    cups_image: hmrs112/cupsd:0.1.2
+  tags: 
+  - print
+  roles:
+  - role: print

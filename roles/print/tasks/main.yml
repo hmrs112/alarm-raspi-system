@@ -1,0 +1,65 @@
+- name: create cups config dir
+  become: true
+  file:
+    path: /srv/docker/cups
+    state: directory
+  tags:
+  - init
+  - print_init
+
+- name: pull cups image
+  docker_image:
+    name: "{{ cups_image }}"
+    state: present
+    source: pull
+    force_tag: yes
+  tags:
+  - init
+  - print_init
+
+- name: Create cups container
+  docker_container:
+    name: "cupsd"
+    image: "{{ cups_image }}"
+    state: started
+    restart_policy: unless-stopped
+    recreate: true
+    networks:
+    - name: proxy
+    env:
+      ADMIN_PASSWORD: "{{ cups_admin_password }}"
+    volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - /var/run/dbus:/var/run/dbus
+    - /srv/docker/cups:/etc/cups
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+      traefik.http.routers.cups.rule: Host(`{{ cups_hostname }}`)
+      traefik.http.routers.cups.service: "cups@docker"
+      traefik.http.routers.cups.entrypoints: "http"
+      traefik.http.services.cups.loadbalancer.server.port: "80"
+  tags:
+  - init
+  - print_init
+
+- name: Install and update cups-client
+  become: true
+  apt: 
+    update_cache: yes 
+    name: cups-client
+  tags:
+  - init
+  - print_init
+
+- name: Update cups-client configuration
+  become: true
+  lineinfile:
+    dest: /etc/cups/client.conf
+    regexp: "ServerName" 
+    line: "ServerName {{ cups_hostname }}"
+    state: present
+    create: yes
+  tags:
+  - init
+  - print_init

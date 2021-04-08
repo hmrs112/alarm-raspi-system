@@ -1,0 +1,147 @@
+- name: Install aptitude using apt
+  become: true
+  apt: 
+    name: aptitude 
+    state: latest 
+    update_cache: yes 
+    force_apt_get: yes
+  tags:
+  - init
+  - docker_init
+
+- name: Install required system packages
+  become: true
+  apt: 
+    name: 
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gpg-agent
+    - software-properties-common
+    state: latest 
+    update_cache: yes
+  tags:
+  - init
+  - docker_init
+  
+- name: Add docker GPG apt key
+  become: true
+  apt_key:
+    url: https://download.docker.com/linux/raspbian/gpg
+    state: present
+  tags:
+  - init
+  - docker_init
+
+- name: Add docker repository
+  become: true
+  apt_repository:
+    repo: deb [arch=armhf] https://download.docker.com/linux/raspbian buster stable
+    state: present
+  tags:
+  - init
+  - docker_init
+
+- name: Update apt and install docker
+  become: true
+  apt: 
+    update_cache: yes 
+    name: 
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    state: latest
+  tags:
+  - init
+
+- name: Install docker module for python
+  pip:
+    name: docker
+  tags:
+  - init
+  - docker_init
+
+- name: Add the user 'pi' to docker group
+  become: true
+  user: 
+    name: pi
+    groups: docker
+    append: yes
+  tags:
+  - init
+  - docker_init
+
+- name: Reboot system
+  become: true
+  reboot:
+    msg: "Reboot initiated by Ansible"
+    connect_timeout: 5
+    reboot_timeout: 600
+    pre_reboot_delay: 0
+    post_reboot_delay: 30
+    test_command: whoami
+
+- name: create traefik config dir
+  become: true
+  file:
+    path: /srv/docker/traefik
+    state: directory
+  tags:
+  - init
+  - docker_init
+
+- name: template acme file
+  become: true
+  copy:
+    src: ../files/acme.json
+    dest: "/srv/docker/traefik/acme.json"
+    mode: 0600
+  tags:
+  - init
+  - docker_init
+
+- name: template traefik config
+  become: true
+  template:
+    src: ../templates/traefik.yml.j2
+    dest: "/srv/docker/traefik/traefik.yml"
+    mode: 0600
+  tags:
+  - init
+  - docker_init
+
+- name: Install reverse-proxy network
+  docker_network:
+    name: "proxy"
+  tags:
+  - init
+  - docker_init
+
+- name: Install reverse-proxy traefik
+  docker_container:
+    name: "traefik"
+    image: "traefik:v2.4"
+    state: started
+    restart_policy: unless-stopped
+    recreate: true
+    networks:
+    - name: proxy
+    volumes:
+    - /etc/localtime:/etc/localtime:ro
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    - /srv/docker/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+    - /srv/docker/traefik/acme.json:/acme.json:rw
+    published_ports:
+    - 80:80
+    - 443:443
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+      traefik.http.routers.traefik.rule: Host(`{{ traefik_hostname }}`)
+      traefik.http.routers.traefik.service: "traefik@docker"
+      traefik.http.routers.traefik.entrypoints: "http"
+      traefik.http.services.traefik.loadbalancer.server.port: "8080"
+  tags:
+  - init
+  - docker_init
+

@@ -1,0 +1,21 @@
+global:
+  sendAnonymousUsage: false
+
+log:
+  level: ERROR
+
+entryPoints:
+  http:
+    address: ":80"
+  https:
+    address: ":443"
+
+api:
+  dashboard: true
+  insecure: true
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: proxy

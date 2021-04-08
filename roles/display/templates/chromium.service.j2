@@ -1,0 +1,15 @@
+[Unit]
+Description=Startup Script Chromium
+
+[Service]
+Type=simple
+Environment="DISPLAY=:0"
+Environment="XAUTHORITY=/home/{{ viewer_user }}/.Xauthority"
+ExecStart=/usr/local/bin/chromium-starter.sh
+Restart=always
+User={{ viewer_user }}
+Group={{ viewer_user }}
+TimeoutStartSec=10
+
+[Install]
+WantedBy=graphical.target
