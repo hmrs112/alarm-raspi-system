@@ -57,6 +57,13 @@
   - init
   - system_init
 
+- name: Set reboot Cronjob
+  cron:
+    name: "daily reboot"
+    minute: "0"
+    hour: "3"
+    job: "reboot"
+
 - name: Enable tmpfs for /var/tmp
   become: true
   mount: 

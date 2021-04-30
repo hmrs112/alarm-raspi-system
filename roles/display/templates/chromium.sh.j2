@@ -10,4 +10,4 @@ sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/' /home/{{ viewer_user }}/.
 xrandr --output {{ display_output }} --rotate {{ display_rotate }}
 
 /usr/bin/unclutter -idle 0.5 -root &
-/usr/bin/chromium-browser --incognito --disable-infobars --noerrdialogs --kiosk {{ chrome_url }}
+/usr/bin/chromium-browser --incognito --disable-infobars --noerrdialogs --disable-session-storage --media-cache-size=1 --media-cache-dir=/dev/null --disk-cache-dir=/dev/null --disk-cache-size=1 --no-referrers --kiosk {{ chrome_url }}
