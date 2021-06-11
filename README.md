@@ -77,10 +77,10 @@ Mit dem Parameter `standby` kann das automatische Ein-/Ausschalten je nach Einsa
 timezone: Europe/Berlin
 standby: true
 display_settings:
-- display_output: HDMI-1 # HDMI-1, HDMI-2
-  display_rotate: normal # normal, right, left, inverted
-- display_output: HDMI-2
-  display_rotate: normal
+- output: HDMI-1 # HDMI-1, HDMI-2
+  rotate: normal # normal, right, left, inverted
+- output: HDMI-2
+  rotate: normal
 viewer_user: display-viewer
 ```
 
