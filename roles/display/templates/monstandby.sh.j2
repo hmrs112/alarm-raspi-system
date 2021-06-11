@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "run standby monitor script"
+CEC_ADDRESS={{ cec_address }}
+WEBAPI_KEY={{ webapi_key }}
+JSON_RESULT=$(curl -X GET -o - https://www.divera247.com/api/last-alarm?accesskey=$WEBAPI_KEY)
+
+SUCCESS=$(echo $JSON_RESULT | jq -e '.success')
+
+if [ $SUCCESS == "true" ]; then
+  echo "on $CEC_ADDRESS" | cec-client -s -d 1
+  echo "monitor on"
+else
+  echo "standby $CEC_ADDRESS" | cec-client -s -d 1
+  echo "monitor off"
+fi

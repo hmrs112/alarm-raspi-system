@@ -4,7 +4,7 @@
 
 **WICHTIG** 
 
-Dieses Projekt ist noch nicht vollständig fertiggestellt! Es fehlt noch ein entscheidender Teil der Alarmdruckfunktionalität und es ist auch noch eine Adminoberfläche geplant.
+Dieses Projekt ist noch nicht vollständig fertiggestellt! Es fehlt noch ein entscheidender Teil der Alarmdruckfunktionalität und es ist auch noch eine Adminoberfläche geplant. Bitte an allen Stellen die vordefinierten Passwörter ändern!
 
 ---
 
@@ -18,6 +18,7 @@ Dazu kann ein Alarmmonitor (z.B. Divera247) über den HDMI-Port angezeigt werden
 - CUPS - Open-Source Drucksystem mit Weboberfläche
 - Traefik - Reverse Proxy, leitet die unterschiedlichen Hostnamen auf die HTTP-Endpunkte
 - Chromium - Browser zum Anzeigen der Alarmmonitore
+- CEC - Consumer Electronics Control, Protkoll zum fernsteuern von Unterhaltungselektronik
 
 ### Vorraussetzungen
 1. RaspberryPI 4 (getestet mit der 2GB Variante)
@@ -27,31 +28,37 @@ Dazu kann ein Alarmmonitor (z.B. Divera247) über den HDMI-Port angezeigt werden
 1. Mehrere DNS-Einträge mit Auflösung auf IP des Raspberry PI (cups..., etc.)
 1. Lokale Ansible-Installation (ansible-playbook)
 
-## Installation
+## Konfiguration
 1. Playbook herunterladen (z.B. git clone ...)
 1. Konfiguration und Inventory anpassen (s. Konfiguration und Inventory)
 1. Ausführen und Installieren des Ansible-Playbooks (s. Ausführen und Installieren)
 
-
-### Konfiguration und Inventory
-#### Inventory
-  ```yaml
-  all:
+### Inventory
+```yaml
+all:
   vars:
     ansible_port: 22
     ansible_user: pi
     ansible_python_interpreter: /usr/bin/python3
-    ansible_ssh_private_key_file: ~/.ssh/id_rsa
   hosts:
-    raspi-hostname01:
-      ansible_host: 192.168.100.101
+    raspi-hostnameXX:
+      cec_address: X.X.X.X
+      ansible_host: xxx.xxx.xxx.xxx
       chrome_url: "https://www.divera247.de/monitor/1.html?autologin=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-      traefik_hostname: traefik.lz01.meine-feuerwehr.tld
-      admin_hostname: admin.lz01.meine-feuerwehr.tld
-      cups_hostname: cups.lz01.meine-feuerwehr.tld
-  ```
+      webapi_key: "superSichererWebAPIKey"
+      traefik_hostname: traefik.lzXX.meine-feuerwehr.tld
+      admin_hostname: admin.lzXX.meine-feuerwehr.tld
+      cups_hostname: cups.lzXX.meine-feuerwehr.tld
+```
 
-#### Grundsystem
+#### CEC-Adresse
+Die CEC-Adresse kann mit dem Paket `cec-utils` ermittelt werden. Das Paket wird mit dem Ansible-Playbook installiert. Daher sind ggf. zwei durchläufe des Ansible-Placbooks notwendig. Mit folgendem Befehl kann die CEC-Adresse des Monitors auf dem Raspberry Pi ermittelt werden.
+
+```bash
+echo 'scan' | cec-client -s -d 1
+```
+
+### Grundsystem
 Der `admin_username` und das `admin_password` wird aktuell noch nicht verwendet. Die angebenden Ports `allowed_ports` werden in der Firewall freigegeben. Als Firewall wird UFW verwendet.
 
 ```yaml
@@ -63,23 +70,28 @@ allowed_ports:
 - 22
 ```
 
-#### Alarmanzeige
-Mit `display_output` ist beim Raspberry Pi einer der beiden HDMI-Anschlüsse gemeint. Die Display-Rotation kann mit `display_rotate` eingestellt werden. Der `viewer_user` ist der Benutzer, der beim Login den Brower anzeigt und über HDMI ausgibt.
+### Alarmanzeige
+Mit dem Parameter `standby` kann das automatische Ein-/Ausschalten je nach Einsatzstatus aktiviert bzw. deaktiviert werden. Unter `display_settings` können Einstellungen zu den Ausgängen des Raspberry Pi vorgenommen werden. Mit `display_output` ist beim Raspberry Pi einer der beiden HDMI-Anschlüsse gemeint. Die Display-Rotation kann mit `display_rotate` eingestellt werden. Der `viewer_user` ist der Benutzer, der beim Login den Brower anzeigt und über HDMI ausgibt. Die Monitore schalten sich im Einsatzfall automatisch ein und nach eendigung des Einsatzes automitsch wieder aus.
 
 ```yaml
-display_output: HDMI-1 # HDMI-1, HDMI-2
-display_rotate: normal # normal, right, left, inverted
+timezone: Europe/Berlin
+standby: true
+display_settings:
+- display_output: HDMI-1 # HDMI-1, HDMI-2
+  display_rotate: normal # normal, right, left, inverted
+- display_output: HDMI-2
+  display_rotate: normal
 viewer_user: display-viewer
 ```
 
-#### Alarmdrucker
+### Alarmdrucker
 Die Zugangsdaten für den CUPS-Admin sind der Benutzer *admin* und das über den Parameter `cups_admin_password` festgelegte Passwort. Der Wert von `cups_image` sollte nur verändert werden, wenn man weiß, was man macht!
 ```yaml
 cups_admin_password: supersicherespasswort
 cups_image: hmrs112/cupsd:0.1.2
 ```
 
-### Ausführen und Installieren
+## Ausführen
 ```bash
 # Komplett ausführen
 ansible-playbook -i inventory.yml playbook.yml

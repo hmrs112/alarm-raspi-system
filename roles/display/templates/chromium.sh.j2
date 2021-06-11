@@ -7,7 +7,9 @@ xset -dpms          # disable DPMS (Energy Star) features.
 sed -i 's/"exited_cleanly":false/"exited_cleanly":true/' /home/{{ viewer_user }}/.config/chromium/Default/Preferences
 sed -i 's/"exit_type":"Crashed"/"exit_type":"Normal"/' /home/{{ viewer_user }}/.config/chromium/Default/Preferences
 
-xrandr --output {{ display_output }} --rotate {{ display_rotate }}
+{% for display_setting in display_settings %}
+xrandr --output {{ display_setting.output }} --rotate {{ display_setting.rotate }}
+{% endfor %}
 
 /usr/bin/unclutter -idle 0.5 -root &
 /usr/bin/chromium-browser --incognito --disable-infobars --noerrdialogs --disable-session-storage --media-cache-size=1 --media-cache-dir=/dev/null --disk-cache-dir=/dev/null --disk-cache-size=1 --no-referrers --kiosk {{ chrome_url }}

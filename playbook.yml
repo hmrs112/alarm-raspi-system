@@ -21,8 +21,12 @@
   hosts: all
   vars:
     timezone: Europe/Berlin
-    display_output: HDMI-1 # HDMI-1, HDMI-2
-    display_rotate: normal # normal, right, left, inverted
+    standby: true
+    display_settings:
+    - display_output: HDMI-1 # HDMI-1, HDMI-2
+      display_rotate: normal # normal, right, left, inverted
+    - display_output: HDMI-2
+      display_rotate: normal
     viewer_user: display-viewer
   tags: 
   - display

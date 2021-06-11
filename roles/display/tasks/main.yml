@@ -19,6 +19,20 @@
   - init
   - display_init
 
+- name: Install required packages
+  become: true
+  apt: 
+    name: 
+    - unclutter
+    - ttf-mscorefonts-installer
+    - cec-utils
+    - jq
+    state: present
+  notify: Restart lightdm
+  tags:
+  - init
+  - display_init
+
 - name: HDMI force hotplug
   become: true
   lineinfile:
@@ -67,18 +81,6 @@
   - init
   - display_init
 
-- name: Install required packages
-  become: true
-  apt: 
-    name: 
-    - unclutter
-    - ttf-mscorefonts-installer
-    state: present
-  notify: Restart lightdm
-  tags:
-  - init
-  - display_init
-
 - name: Disable lightdm screensaver
   become: true
   lineinfile:
@@ -117,6 +119,47 @@
   - init
   - display_init
 
+- name: monitor on/standby script
+  become: true
+  when: (standby == true)
+  template:
+    src: "../templates/monstandby.sh.j2"
+    dest: "/usr/local/bin/monstandby.sh"
+    owner: "root"
+    group: "root"
+    mode: 0744
+  tags:
+  - init
+  - update
+  - display_init
+  - display_update
+
+- name: monitor on/standby service
+  become: true
+  when: (standby == true)
+  template:
+    src: "../templates/monstandby.service.j2"
+    dest: "/etc/systemd/system/monstandby.service"
+    mode: 0644
+    owner: root
+    group: root
+  tags:
+  - init
+  - display_init
+
+- name: monitor standby timer
+  become: true
+  when: (standby == true)
+  template:
+    src: "../templates/monstandby.timer.j2"
+    dest: "/etc/systemd/system/monstandby.timer"
+    mode: 0644
+    owner: root
+    group: root
+  tags:
+  - init
+  - display_init
+
 - name: Reload systemd daemon
   become: true
   systemd:
@@ -128,8 +171,36 @@
 - name: Enable systemd chromium service
   become: true
   systemd:
-    name: chromium
+    name: chromium.service
     enabled: yes
+    masked: no
+    state: restarted
+  tags:
+  - init
+  - update
+  - display_init
+  - display_update
+
+- name: Enable systemd standby service
+  become: true
+  when: (standby == true)
+  systemd:
+    name: monstandby.timer
+    enabled: yes
+    masked: no
+    state: restarted
+  tags:
+  - init
+  - update
+  - display_init
+  - display_update
+
+- name: Enable systemd standby service
+  become: true
+  when: (standby == false)
+  systemd:
+    name: monstandby.timer
+    enabled: false
     masked: no
     state: restarted
   tags:
